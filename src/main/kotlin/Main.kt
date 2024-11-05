@@ -1,22 +1,45 @@
 import builder.DictionaryBuilder
 import converter.EnglishToJapaneseConverter
-import java.io.FileInputStream
-import java.io.ObjectInputStream
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+lateinit var dictionaryBuilder: DictionaryBuilder
+lateinit var englishToJapaneseConverter: EnglishToJapaneseConverter
 
 fun main() {
-    val builder = DictionaryBuilder()
-    builder.build("src/main/resources/ramen_nara.tsv")
-
-    val objectInputJP = ObjectInputStream(FileInputStream("./src/main/resources/ramen_jp.dat"))
-    val objectInputEN = ObjectInputStream(FileInputStream("./src/main/resources/ramen_en.dat"))
-    val tokenArrayObjectInput = ObjectInputStream(FileInputStream("./src/main/resources/token.dat"))
-
-    val englishToJapaneseConverter = EnglishToJapaneseConverter()
-    englishToJapaneseConverter.build(
-        objectInputStreamJP = objectInputJP,
-        objectInputStreamEN = objectInputEN,
-        tokenArrayObjectInputStream = tokenArrayObjectInput
-    )
-    val result = englishToJapaneseConverter.convert("Menya Eguchi")
-    println(result)
+    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
 }
+
+fun Application.module() {
+    val appComponent = DaggerAppComponent.create()
+    dictionaryBuilder = appComponent.dictionaryBuilder
+    englishToJapaneseConverter = appComponent.englishToJapaneseConverter
+
+    install(ContentNegotiation) {
+        json(Json { prettyPrint = true })
+    }
+
+    routing {
+        post("/calculate") {
+            val input = call.receive<CalculationRequest>()
+            val predictionResult = englishToJapaneseConverter.predictResultEN(input.value).map {
+                englishToJapaneseConverter.convert(it)
+            }
+            call.respond(CalculationResponse(predictionResult))
+        }
+    }
+}
+
+@Serializable
+data class CalculationRequest(val value: String)
+
+@Serializable
+data class CalculationResponse(val result: List<String>)
