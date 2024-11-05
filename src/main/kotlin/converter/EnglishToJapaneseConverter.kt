@@ -43,6 +43,14 @@ class EnglishToJapaneseConverter {
         auxiliaryDataTokenArrayLBSRank1 = tokenArray.bitvector.rank1GetIntArray()
     }
 
+    fun predictResultEN(input: String): List<String> {
+        return dictionaryEN.predictiveSearch(
+            prefix = input,
+            rank0Array = auxiliaryDataDictionaryENLBSRank0,
+            rank1Array = auxiliaryDataDictionaryENLBSRank1
+        )
+    }
+
     fun convert(input: String): String {
         val nodeIndex = dictionaryEN.getNodeIndex(
             s = input,
