@@ -28,18 +28,18 @@ fun Application.module() {
     }
 
     routing {
-        post("/calculate") {
-            val input = call.receive<CalculationRequest>()
+        post("/henkan") {
+            val input = call.receive<HenkanRequest>()
             val predictionResult = englishToJapaneseConverter.predictResultEN(input.value).map {
-                englishToJapaneseConverter.convert(it)
+                Pair(it, englishToJapaneseConverter.convert(it))
             }
-            call.respond(CalculationResponse(predictionResult))
+            call.respond(HenkanResponse(predictionResult))
         }
     }
 }
 
 @Serializable
-data class CalculationRequest(val value: String)
+data class HenkanRequest(val value: String)
 
 @Serializable
-data class CalculationResponse(val result: List<String>)
+data class HenkanResponse(val result: List<Pair<String, String>>)
