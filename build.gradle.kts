@@ -23,6 +23,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests:2.0.3")
     implementation("com.google.dagger:dagger:2.50")
     kapt("com.google.dagger:dagger-compiler:2.50")
+    implementation("io.ktor:ktor-server-cors:2.0.0")
 }
 
 tasks.test {
