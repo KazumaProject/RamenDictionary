@@ -1,10 +1,12 @@
 import builder.DictionaryBuilder
 import converter.EnglishToJapaneseConverter
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -27,11 +29,17 @@ fun Application.module() {
         json(Json { prettyPrint = true })
     }
 
+    install(CORS) {
+        allowHost("localhost:3000")
+        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.ContentType)
+    }
+
     routing {
         post("/henkan") {
             val input = call.receive<HenkanRequest>()
             val predictionResult = englishToJapaneseConverter.predictResultEN(input.value).map {
-                Pair(it, englishToJapaneseConverter.convert(it))
+                listOf(it, englishToJapaneseConverter.convert(it)) // Convert Pair to List
             }
             call.respond(HenkanResponse(predictionResult))
         }
@@ -42,4 +50,4 @@ fun Application.module() {
 data class HenkanRequest(val value: String)
 
 @Serializable
-data class HenkanResponse(val result: List<Pair<String, String>>)
+data class HenkanResponse(val result: List<List<String>>)
